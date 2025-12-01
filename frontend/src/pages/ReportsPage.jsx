@@ -21,13 +21,16 @@ ChartJS.register(
   Legend
 );
 
+// 🔗 Deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
+
 const ReportsPage = () => {
   const [weeklyData, setWeeklyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState({});
 
   // Fetch Weekly Sales (last 7 days)
   const fetchWeeklySales = async () => {
-    const res = await fetch("http://localhost:5000/api/orders");
+    const res = await fetch(`${API_URL}/api/orders`);
     const orders = await res.json();
 
     const today = new Date();
@@ -54,7 +57,7 @@ const ReportsPage = () => {
 
   // Fetch Monthly Sales
   const fetchMonthlySales = async () => {
-    const res = await fetch("http://localhost:5000/api/orders/monthly");
+    const res = await fetch(`${API_URL}/api/orders/monthly`);
     const data = await res.json();
     setMonthlyData(data);
   };

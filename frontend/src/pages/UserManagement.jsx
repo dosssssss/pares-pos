@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 
+// 🔗 Deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
+
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState("");
@@ -14,7 +17,7 @@ const UserManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/api/users");
+      const res = await fetch(`${API_URL}/api/users`);
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
@@ -42,16 +45,16 @@ const UserManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/api/users", {
+      const res = await fetch(`${API_URL}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, role }),
       });
-      
+
       if (!res.ok) {
         throw new Error(`Failed to create user: ${res.status}`);
       }
-      
+
       setSuccess("User created successfully!");
       setUsername("");
       setPassword("");
@@ -70,14 +73,14 @@ const UserManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const res = await fetch(`${API_URL}/api/users/${id}`, {
         method: "DELETE",
       });
-      
+
       if (!res.ok) {
         throw new Error(`Failed to delete user: ${res.status}`);
       }
-      
+
       setSuccess("User deleted successfully!");
       fetchUsers();
     } catch (err) {
@@ -97,7 +100,7 @@ const UserManagement = () => {
   return (
     <div style={styles.container}>
       <h1>User Management</h1>
-      
+
       {/* Error/Success Messages */}
       {error && (
         <div style={styles.errorBox} onClick={clearMessages}>
@@ -140,8 +143,8 @@ const UserManagement = () => {
           <option value="admin">Admin</option>
         </select>
 
-        <button 
-          style={styles.addBtn} 
+        <button
+          style={styles.addBtn}
           onClick={handleCreate}
           disabled={loading}
         >
@@ -175,8 +178,8 @@ const UserManagement = () => {
                 <td style={styles.td}>{u.username}</td>
                 <td style={styles.td}>{u.role}</td>
                 <td style={styles.td}>
-                  <button 
-                    style={styles.deleteBtn} 
+                  <button
+                    style={styles.deleteBtn}
                     onClick={() => handleDelete(u._id)}
                     disabled={loading}
                   >

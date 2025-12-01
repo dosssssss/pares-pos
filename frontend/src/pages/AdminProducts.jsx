@@ -1,6 +1,8 @@
-// frontend/src/pages/AdminProducts.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+// 🔗 Use your deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -23,7 +25,7 @@ function AdminProducts() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/products");
+      const res = await fetch(`${API_URL}/api/products`);
       const data = await res.json();
       // optional: sort by category then name
       data.sort((a, b) => {
@@ -81,8 +83,8 @@ function AdminProducts() {
 
     const method = editingId ? "PUT" : "POST";
     const url = editingId
-      ? `http://localhost:5000/api/products/${editingId}`
-      : "http://localhost:5000/api/products";
+      ? `${API_URL}/api/products/${editingId}`
+      : `${API_URL}/api/products`;
 
     const payload = {
       ...form,
@@ -116,7 +118,7 @@ function AdminProducts() {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: "DELETE",
       });
 
@@ -189,7 +191,13 @@ function AdminProducts() {
         />
         <span style={styles.legend}>
           <span style={{ ...styles.statusDot, background: "#16a34a" }} /> Active
-          <span style={{ ...styles.statusDot, background: "#6b7280", marginLeft: 12 }} />{" "}
+          <span
+            style={{
+              ...styles.statusDot,
+              background: "#6b7280",
+              marginLeft: 12,
+            }}
+          />{" "}
           Inactive
         </span>
       </div>
@@ -216,9 +224,7 @@ function AdminProducts() {
                 {filteredProducts.map((p, index) => (
                   <tr
                     key={p._id}
-                    style={
-                      index % 2 === 0 ? styles.trStriped : undefined
-                    }
+                    style={index % 2 === 0 ? styles.trStriped : undefined}
                   >
                     <td style={styles.td}>{p.name}</td>
                     <td style={styles.td}>
@@ -288,9 +294,7 @@ function AdminProducts() {
                   placeholder="e.g. PARES OVERLOAD"
                   value={form.name}
                   required
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </label>
 
@@ -303,9 +307,7 @@ function AdminProducts() {
                   placeholder="e.g. 150"
                   value={form.price}
                   required
-                  onChange={(e) =>
-                    setForm({ ...form, price: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
                 />
               </label>
 
@@ -332,9 +334,7 @@ function AdminProducts() {
                   style={{
                     ...styles.toggle,
                     backgroundColor: form.isActive ? "#22c55e" : "#d1d5db",
-                    justifyContent: form.isActive
-                      ? "flex-end"
-                      : "flex-start",
+                    justifyContent: form.isActive ? "flex-end" : "flex-start",
                   }}
                   onClick={() =>
                     setForm({ ...form, isActive: !form.isActive })

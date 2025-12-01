@@ -3,6 +3,9 @@ import "../css/CounterPOS.css";
 import { FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+// 🔗 Use your deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
+
 function CounterPOS() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -21,7 +24,7 @@ function CounterPOS() {
 
   // Load products
   const loadProducts = async () => {
-    const res = await fetch("http://localhost:5000/api/products");
+    const res = await fetch(`${API_URL}/api/products`);
     const data = await res.json();
     setProducts(data);
     setFilteredProducts(data.filter((p) => p.category === "PARES"));
@@ -31,15 +34,14 @@ function CounterPOS() {
     loadProducts();
   }, []);
 
-const filterProducts = (cat) => {
-  setCategory(cat);
+  const filterProducts = (cat) => {
+    setCategory(cat);
 
-  // Map EXTRA tab to ADD-ONS category in the database
-  const dbCategory = cat === "EXTRA" ? "ADD-ONS" : cat;
+    // Map EXTRA tab to ADD-ONS category in the database
+    const dbCategory = cat === "EXTRA" ? "ADD-ONS" : cat;
 
-  setFilteredProducts(products.filter((p) => p.category === dbCategory));
-};
-
+    setFilteredProducts(products.filter((p) => p.category === dbCategory));
+  };
 
   const addToCart = (p) => {
     const existing = cart.find((item) => item._id === p._id);
@@ -109,7 +111,7 @@ const filterProducts = (cat) => {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/orders", {
+      const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),

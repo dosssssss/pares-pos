@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 
+// 🔗 Use your deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
+
 const CounterSales = () => {
   const [date, setDate] = useState("");
   const [orders, setOrders] = useState([]);
@@ -7,7 +10,7 @@ const CounterSales = () => {
   const fetchOrders = async () => {
     if (!date) return alert("Please select a date.");
 
-    const res = await fetch(`http://localhost:5000/api/orders?date=${date}`);
+    const res = await fetch(`${API_URL}/api/orders?date=${date}`);
     const data = await res.json();
     setOrders(data);
   };

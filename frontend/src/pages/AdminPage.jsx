@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// ===== ADD THIS =====
+const API_URL = "https://pares-pos.onrender.com";
+
 function AdminPage() {
   const navigate = useNavigate();
 
@@ -19,7 +22,8 @@ function AdminPage() {
   // Fetch orders with optional date filter
   const fetchOrders = async () => {
     try {
-      let url = "http://localhost:5000/api/orders";
+      // ===== UPDATED URL =====
+      let url = `${API_URL}/api/orders`;
 
       if (date) url += `?date=${date}`;
 
@@ -165,6 +169,7 @@ function AdminPage() {
     </div>
   );
 }
+
 
 // ======================
 //     STYLES

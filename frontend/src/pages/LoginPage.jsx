@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/LoginPage.css"; // ⬅ make sure this path is correct
 
+// 🔗 Deployed backend URL
+const API_URL = "https://pares-pos.onrender.com";
+
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -11,24 +14,30 @@ function LoginPage() {
   const handleLogin = async () => {
     setError("");
 
-    const res = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.message || "Login failed");
-      return;
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.user.role);
+      localStorage.setItem("username", data.user.username);
+
+      if (data.user.role === "admin") navigate("/admin");
+      else navigate("/counter");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Network error. Please try again.");
     }
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.user.role);
-
-    if (data.user.role === "admin") navigate("/admin");
-    else navigate("/counter");
   };
 
   return (

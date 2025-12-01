@@ -4,6 +4,10 @@ import AdminPage from "./pages/AdminPage";
 import CounterPOS from "./pages/CounterPOS";
 import AdminProducts from "./pages/AdminProducts";
 import UserManagement from "./pages/UserManagement";
+import CounterSales from "./pages/CounterSales";
+import ReportsPage from "./pages/ReportsPage";
+
+
 
 function App() {
   return (
@@ -13,6 +17,13 @@ function App() {
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/products" element={<AdminProducts />} />
       <Route path="/admin/users" element={<UserManagement />} />
+      <Route path="/counter/sales" element={<CounterSales />} />
+      <Route path="/admin/reports" element={<ReportsPage />} />
+
+      
+
+      
+
     </Routes>
   );
 }

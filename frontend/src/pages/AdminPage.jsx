@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 function AdminPage() {
   const navigate = useNavigate();
 
-  // Get today's date in YYYY-MM-DD (PH Time)
   const todayPH = new Date().toLocaleString("en-CA", {
     timeZone: "Asia/Manila",
     year: "numeric",
@@ -16,7 +15,6 @@ function AdminPage() {
   const [orders, setOrders] = useState([]);
   const [salesTotal, setSalesTotal] = useState(0);
 
-  // Fetch orders with optional date filter
   const fetchOrders = async () => {
     try {
       let url = "http://localhost:5000/api/orders";
@@ -31,8 +29,8 @@ function AdminPage() {
 
       const data = await res.json();
 
-      // Compute daily sales
       const total = data.reduce((sum, order) => sum + order.total, 0);
+
       setSalesTotal(total);
       setOrders(data);
     } catch (error) {
@@ -44,17 +42,10 @@ function AdminPage() {
     fetchOrders();
   }, [date]);
 
-  // Format to Philippine Time
-  const formatPHTime = (isoString) => {
-    return new Date(isoString).toLocaleString("en-PH", {
-      timeZone: "Asia/Manila",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const totalItems = orders.reduce(
+    (sum, o) => sum + o.items.reduce((s, i) => s + Number(i.qty), 0),
+    0
+  );
 
   return (
     <div style={styles.container}>
@@ -63,11 +54,17 @@ function AdminPage() {
         <h1>Admin Dashboard</h1>
 
         <div style={{ display: "flex", gap: "10px" }}>
-          <button style={styles.manageBtn} onClick={() => navigate("/admin/products")}>
+          <button
+            style={styles.manageBtn}
+            onClick={() => navigate("/admin/products")}
+          >
             Manage Products
           </button>
 
-          <button style={styles.manageBtn} onClick={() => navigate("/admin/users")}>
+          <button
+            style={styles.manageBtn}
+            onClick={() => navigate("/admin/users")}
+          >
             Manage Users
           </button>
         </div>
@@ -87,53 +84,75 @@ function AdminPage() {
 
       <h2 style={{ marginTop: "20px" }}>Transactions</h2>
 
-      <h3 style={styles.salesTotal}>Total Sales: ₱{salesTotal.toLocaleString()}</h3>
+      <h3 style={styles.salesTotal}>
+        Total Sales: ₱{salesTotal.toLocaleString()}
+      </h3>
 
-      {/* LIST OF ORDERS */}
+      <h3 style={styles.salesTotal}>
+        Total Items Sold: {totalItems}
+      </h3>
+
+      {/* ORDERS LIST */}
       <div style={styles.cardList}>
         {orders.length === 0 ? (
           <p style={styles.noData}>No transactions found for this date</p>
         ) : (
-          orders.map((order) => (
-            <div key={order._id} style={styles.card}>
-              {/* DATE & TOTAL */}
-              <div style={styles.rowSpaceBetween}>
-                <div>
-                  <h4 style={styles.cardTitle}>📅 Date & Time:</h4>
-                  <p style={styles.value}>{formatPHTime(order.date)}</p>
+          orders.map((order) => {
+            const itemCount = order.items.reduce(
+              (s, i) => s + Number(i.qty),
+              0
+            );
+
+            return (
+              <div key={order._id} style={styles.card}>
+                {/* DATE & TOTAL */}
+                <div style={styles.rowSpaceBetween}>
+                  <div>
+                    <h4 style={styles.cardTitle}>📅 Date & Time:</h4>
+                    <p style={styles.value}>
+                      {order.date} — {order.time}
+                    </p>
+                  </div>
+
+                  <h2 style={styles.totalAmount}>₱{order.total}</h2>
                 </div>
 
-                <h2 style={styles.totalAmount}>₱{order.total}</h2>
+                <p style={{ opacity: 0.7, fontWeight: "bold" }}>
+                  Items Sold: {itemCount}
+                </p>
+
+                {/* ITEMS LIST */}
+                <h4 style={styles.cardTitle}>🧾 Items:</h4>
+
+                <div style={styles.itemsBox}>
+                  {order.items.map((i, idx) => (
+                    <div key={idx} style={styles.itemRow}>
+                      <span>{i.name}</span>
+                      <span>
+                        {i.qty}× (₱{i.price})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  style={styles.manageBtn}
+                  onClick={() => navigate("/admin/reports")}
+                >
+                  View Reports
+                </button>
+
+                {/* CASHIER */}
+                <h4 style={styles.cardTitle}>👤 Cashier:</h4>
+                <p style={styles.value}>{order.cashier}</p>
               </div>
-
-              {/* ITEMS */}
-              <h4 style={styles.cardTitle}>🧾 Items:</h4>
-
-              <div style={styles.itemsBox}>
-                {order.items.map((i, idx) => (
-                  <div key={idx} style={styles.itemRow}>
-                    <span>{i.name}</span>
-                    <span>
-                      {i.qty}× (₱{i.price})
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* CASHIER */}
-              <h4 style={styles.cardTitle}>👤 Cashier:</h4>
-              <p style={styles.value}>{order.cashier}</p>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
   );
 }
-
-// ======================
-//     STYLES
-// ======================
 
 const styles = {
   container: { padding: "30px", fontFamily: "Arial, sans-serif" },

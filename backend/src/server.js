@@ -26,7 +26,7 @@ app.use("/api/products", productRoutes); // food list
 app.use("/api/orders", orderRoutes);     // order history / create order
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/users", require("./routes/userRoutes"));
+
 
 
 

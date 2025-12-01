@@ -1,60 +1,73 @@
-// controllers/orderController.js
-
 const Order = require("../models/Order");
 
-// ===============================
-// Save New Order
-// ===============================
+// Create Order
 exports.createOrder = async (req, res) => {
   try {
     const { items, total, cash, change, cashier } = req.body;
 
-    // Philippine Date & Time
-    const nowPH = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Manila",
-    });
+    // Convert to PH Time
+    const nowPH = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
+    );
 
-    const iso = new Date(nowPH).toISOString(); // Save as ISO in DB
+    // YYYY-MM-DD
+    const date = nowPH.toISOString().split("T")[0];
 
-    const order = new Order({
+    // HH:mm:ss
+    const time = nowPH.toTimeString().split(" ")[0];
+
+    const order = await Order.create({
       items,
       total,
       cash,
       change,
       cashier,
-      date: iso,         // full timestamp
-      time: iso,         // optional separate field (if your model requires it)
+      date,
+      time,
     });
 
-    const saved = await order.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    console.error("Order Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(201).json(order);
+  } catch (error) {
+    console.error("CREATE ORDER ERROR:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// ===============================
-// Get Orders (with optional ?date=YYYY-MM-DD)
-// ===============================
+// Get orders (Admin & Counter)
 exports.getOrders = async (req, res) => {
   try {
     const { date } = req.query;
 
     let filter = {};
+    if (date) filter.date = date;
 
-    if (date) {
-      // 🎯 Convert selected date into Philippine range
-      const start = new Date(`${date}T00:00:00+08:00`);
-      const end = new Date(`${date}T23:59:59+08:00`);
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
 
-      filter.date = { $gte: start, $lte: end };
-    }
-
-    const orders = await Order.find(filter).sort({ date: -1 });
     res.json(orders);
-  } catch (err) {
-    console.error("Get Orders Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+  } catch (error) {
+    console.error("GET ORDERS ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Monthly Report
+exports.getMonthlyReport = async (req, res) => {
+  try {
+    const orders = await Order.find({});
+    const monthlyTotals = {};
+
+    orders.forEach((order) => {
+      const monthKey = order.date.slice(0, 7);
+
+      if (!monthlyTotals[monthKey]) {
+        monthlyTotals[monthKey] = 0;
+      }
+
+      monthlyTotals[monthKey] += order.total;
+    });
+
+    res.json(monthlyTotals);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

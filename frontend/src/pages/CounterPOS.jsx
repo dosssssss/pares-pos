@@ -1,51 +1,48 @@
 import React, { useEffect, useState } from "react";
 import "../css/CounterPOS.css";
 import { FaTrash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 function CounterPOS() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [category, setCategory] = useState("PARES");
+
   const [cart, setCart] = useState([]);
   const [cash, setCash] = useState("");
   const [change, setChange] = useState(0);
 
-  // --- SALES PANEL STATES ---
-  const [showSales, setShowSales] = useState(false);
-  const [salesDate, setSalesDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [salesList, setSalesList] = useState([]);
-  const [salesTotal, setSalesTotal] = useState(0);
+  const navigate = useNavigate();
 
-  const categories = ["PARES", "GOTO", "SOLO", "ADD-ONS", "DRINKS"];
-  const cashier = localStorage.getItem("username") || "Cashier";
+  // UPDATED CATEGORIES
+  const categories = ["PARES", "GOTO", "SOLO", "EXTRA", "DRINKS"];
 
-  // Fetch Products
+  const cashier = localStorage.getItem("username");
+
+  // Load products
   const loadProducts = async () => {
     const res = await fetch("http://localhost:5000/api/products");
     const data = await res.json();
     setProducts(data);
-    filterProducts("PARES", data);
+    setFilteredProducts(data.filter((p) => p.category === "PARES"));
   };
 
   useEffect(() => {
     loadProducts();
   }, []);
 
-  // Filter by Category
-  const filterProducts = (cat, list = products) => {
+  const filterProducts = (cat) => {
     setCategory(cat);
-    setFilteredProducts(list.filter((item) => item.category === cat));
+    setFilteredProducts(products.filter((p) => p.category === cat));
   };
 
-  // Add to cart
   const addToCart = (p) => {
-    const exists = cart.find((i) => i._id === p._id);
-    if (exists) {
+    const existing = cart.find((item) => item._id === p._id);
+
+    if (existing) {
       setCart(
-        cart.map((i) =>
-          i._id === p._id ? { ...i, qty: i.qty + 1 } : i
+        cart.map((item) =>
+          item._id === p._id ? { ...item, qty: item.qty + 1 } : item
         )
       );
     } else {
@@ -53,21 +50,17 @@ function CounterPOS() {
     }
   };
 
-  // Quantity Controls
   const increaseQty = (id) => {
     setCart(
-      cart.map((item) =>
-        item._id === id ? { ...item, qty: item.qty + 1 } : item
-      )
+      cart.map((i) => (i._id === id ? { ...i, qty: i.qty + 1 } : i))
     );
   };
 
   const decreaseQty = (id) => {
     setCart(
-      cart
-        .map((item) =>
-          item._id === id ? { ...item, qty: Math.max(item.qty - 1, 1) } : item
-        )
+      cart.map((i) =>
+        i._id === id ? { ...i, qty: Math.max(i.qty - 1, 1) } : i
+      )
     );
   };
 
@@ -75,87 +68,104 @@ function CounterPOS() {
     setCart(cart.filter((item) => item._id !== id));
   };
 
-  // Calculate totals
   const totalAmount = cart.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
   );
 
-  // Checkout
   const handleCheckout = async () => {
-    if (!cash) return alert("Please enter cash.");
-    if (cash < totalAmount) return alert("Not enough cash.");
+    if (cart.length === 0) {
+      alert("No items added");
+      return;
+    }
 
-    const orderData = {
-      items: cart,
+    const cashNum = Number(cash);
+
+    if (!cashNum) {
+      alert("Enter cash amount");
+      return;
+    }
+
+    if (cashNum < totalAmount) {
+      alert("Not enough cash!");
+      return;
+    }
+
+    const order = {
+      items: cart.map((i) => ({
+        name: i.name,
+        price: i.price,
+        qty: i.qty,
+      })),
       total: totalAmount,
-      cash,
-      change,
+      cash: cashNum,
+      change: cashNum - totalAmount,
       cashier,
     };
 
-    const res = await fetch("http://localhost:5000/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderData),
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order),
+      });
 
-    if (res.ok) {
-      alert("Order completed!");
-      setCart([]);
-      setCash("");
-      setChange(0);
+      if (res.ok) {
+        alert("Order Completed!");
+        setCart([]);
+        setCash("");
+        setChange(0);
+      } else {
+        alert("Server error saving order");
+      }
+    } catch (err) {
+      alert("Network error");
     }
-  };
-
-  // --- LOAD SALES DATA ---
-  const loadSales = async () => {
-    const res = await fetch(
-      `http://localhost:5000/api/orders?date=${salesDate}`
-    );
-    const data = await res.json();
-
-    setSalesList(data);
-
-    const total = data.reduce((sum, order) => sum + order.total, 0);
-    setSalesTotal(total);
-
-    setShowSales(true);
   };
 
   return (
     <div className="counter-container">
+      {/* Header */}
       <div className="top-bar">
         <h1>Counter POS</h1>
 
-        {/* Sales Button */}
-        <button className="sales-btn" onClick={loadSales}>
-          View Sales
-        </button>
+        <div className="user-section">
+          <span className="username">{cashier}</span>
+
+          <button
+            className="logout-btn"
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = "/";
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
-      {/* CATEGORY BUTTONS */}
+      {/* Category Tabs */}
       <div className="category-tabs">
         {categories.map((cat) => (
           <button
             key={cat}
-            className={`cat-btn ${category === cat ? "active" : ""}`}
             onClick={() => filterProducts(cat)}
+            className={`cat-btn ${category === cat ? "active" : ""}`}
           >
             {cat}
           </button>
         ))}
       </div>
 
-      {/* MENU BOX */}
+      {/* Menu */}
       <div className="menu-box">
         <h3>{category} Menu</h3>
 
         <div className="menu-grid">
           {filteredProducts.map((p) => (
             <div
-              key={p._id}
               className="menu-item"
+              key={p._id}
               onClick={() => addToCart(p)}
             >
               <p className="menu-name">{p.name}</p>
@@ -169,29 +179,32 @@ function CounterPOS() {
       <div className="cart-box">
         <h3>Order Summary</h3>
 
-        <div className="cart-items">
-          {cart.length === 0 ? (
-            <p className="empty-cart">No items added</p>
-          ) : (
-            cart.map((item) => (
-              <div className="cart-row" key={item._id}>
-                <span>{item.name}</span>
+        {cart.length === 0 ? (
+          <p className="empty-cart">No items added</p>
+        ) : (
+          cart.map((item) => (
+            <div className="cart-row" key={item._id}>
+              <span className="item-name">{item.name}</span>
 
-                <div className="qty-controls">
-                  <button onClick={() => decreaseQty(item._id)}>-</button>
-                  <span>{item.qty}</span>
-                  <button onClick={() => increaseQty(item._id)}>+</button>
-                </div>
-
-                <span>₱{item.price * item.qty}</span>
-
-                <button className="remove-btn" onClick={() => removeItem(item._id)}>
-                  <FaTrash />
-                </button>
+              <div className="qty-controls">
+                <button onClick={() => decreaseQty(item._id)}>-</button>
+                <span>{item.qty}</span>
+                <button onClick={() => increaseQty(item._id)}>+</button>
               </div>
-            ))
-          )}
-        </div>
+
+              <span className="item-total">
+                ₱{item.price * item.qty}
+              </span>
+
+              <button
+                className="remove-btn"
+                onClick={() => removeItem(item._id)}
+              >
+                <FaTrash />
+              </button>
+            </div>
+          ))
+        )}
 
         <div className="cart-total">Total: ₱{totalAmount}</div>
 
@@ -202,7 +215,7 @@ function CounterPOS() {
           value={cash}
           onChange={(e) => {
             setCash(e.target.value);
-            setChange(e.target.value - totalAmount);
+            setChange(Number(e.target.value) - totalAmount);
           }}
         />
 
@@ -215,46 +228,13 @@ function CounterPOS() {
         </button>
       </div>
 
-      {/* ---- SALES PANEL ---- */}
-      {showSales && (
-        <div className="sales-modal">
-          <div className="sales-content">
-            <h2>Daily Sales</h2>
-
-            <input
-              type="date"
-              value={salesDate}
-              onChange={(e) => setSalesDate(e.target.value)}
-              className="sales-date"
-            />
-
-            <button className="sales-refresh" onClick={loadSales}>
-              Load Sales
-            </button>
-
-            <div className="sales-list">
-              {salesList.length === 0 ? (
-                <p>No transactions found</p>
-              ) : (
-                salesList.map((order) => (
-                  <div className="sales-row" key={order._id}>
-                    <span>{order.cashier}</span>
-                    <span>₱{order.total}</span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <h3 className="sales-total">
-              Total Sales: ₱{salesTotal}
-            </h3>
-
-            <button className="close-sales" onClick={() => setShowSales(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* FLOATING SALES BUTTON */}
+      <button
+        className="floating-sales-btn"
+        onClick={() => navigate("/counter/sales")}
+      >
+        SALES
+      </button>
     </div>
   );
 }

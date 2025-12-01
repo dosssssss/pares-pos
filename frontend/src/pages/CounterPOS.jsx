@@ -31,10 +31,15 @@ function CounterPOS() {
     loadProducts();
   }, []);
 
-  const filterProducts = (cat) => {
-    setCategory(cat);
-    setFilteredProducts(products.filter((p) => p.category === cat));
-  };
+const filterProducts = (cat) => {
+  setCategory(cat);
+
+  // Map EXTRA tab to ADD-ONS category in the database
+  const dbCategory = cat === "EXTRA" ? "ADD-ONS" : cat;
+
+  setFilteredProducts(products.filter((p) => p.category === dbCategory));
+};
+
 
   const addToCart = (p) => {
     const existing = cart.find((item) => item._id === p._id);

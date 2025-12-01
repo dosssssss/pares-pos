@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 function AdminPage() {
   const navigate = useNavigate();
 
+  // Get today's date in YYYY-MM-DD (PH Time)
   const todayPH = new Date().toLocaleString("en-CA", {
     timeZone: "Asia/Manila",
     year: "numeric",
@@ -15,6 +16,7 @@ function AdminPage() {
   const [orders, setOrders] = useState([]);
   const [salesTotal, setSalesTotal] = useState(0);
 
+  // Fetch orders with optional date filter
   const fetchOrders = async () => {
     try {
       let url = "http://localhost:5000/api/orders";
@@ -29,8 +31,8 @@ function AdminPage() {
 
       const data = await res.json();
 
+      // Compute daily sales
       const total = data.reduce((sum, order) => sum + order.total, 0);
-
       setSalesTotal(total);
       setOrders(data);
     } catch (error) {
@@ -53,7 +55,7 @@ function AdminPage() {
       <div style={styles.headerRow}>
         <h1>Admin Dashboard</h1>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
             style={styles.manageBtn}
             onClick={() => navigate("/admin/products")}
@@ -66,6 +68,17 @@ function AdminPage() {
             onClick={() => navigate("/admin/users")}
           >
             Manage Users
+          </button>
+
+          {/* LOGOUT BUTTON */}
+          <button
+            style={styles.logoutBtn}
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = "/";
+            }}
+          >
+            Logout
           </button>
         </div>
       </div>
@@ -88,11 +101,9 @@ function AdminPage() {
         Total Sales: ₱{salesTotal.toLocaleString()}
       </h3>
 
-      <h3 style={styles.salesTotal}>
-        Total Items Sold: {totalItems}
-      </h3>
+      <h3 style={styles.salesTotal}>Total Items Sold: {totalItems}</h3>
 
-      {/* ORDERS LIST */}
+      {/* LIST OF ORDERS */}
       <div style={styles.cardList}>
         {orders.length === 0 ? (
           <p style={styles.noData}>No transactions found for this date</p>
@@ -121,7 +132,7 @@ function AdminPage() {
                   Items Sold: {itemCount}
                 </p>
 
-                {/* ITEMS LIST */}
+                {/* ITEMS */}
                 <h4 style={styles.cardTitle}>🧾 Items:</h4>
 
                 <div style={styles.itemsBox}>
@@ -135,6 +146,7 @@ function AdminPage() {
                   ))}
                 </div>
 
+                {/* VIEW REPORTS BUTTON */}
                 <button
                   style={styles.manageBtn}
                   onClick={() => navigate("/admin/reports")}
@@ -153,6 +165,10 @@ function AdminPage() {
     </div>
   );
 }
+
+// ======================
+//     STYLES
+// ======================
 
 const styles = {
   container: { padding: "30px", fontFamily: "Arial, sans-serif" },
@@ -174,11 +190,22 @@ const styles = {
     fontSize: "16px",
   },
 
+  logoutBtn: {
+    padding: "10px 20px",
+    background: "red",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "16px",
+    fontWeight: "bold",
+  },
+
   filterBox: {
     display: "flex",
-    alignItems: "center",
     gap: "10px",
     marginTop: 10,
+    alignItems: "center",
   },
 
   label: { fontSize: "16px" },
@@ -189,7 +216,7 @@ const styles = {
     fontSize: "20px",
     fontWeight: "bold",
     color: "green",
-    marginBottom: "15px",
+    marginBottom: "10px",
   },
 
   cardList: {

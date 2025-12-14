@@ -1,43 +1,45 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const { protect, isAdmin } = require("../middleware/authMiddleware");
 
-// GET all users
-router.get("/", async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch users" });
-  }
+// GET all users (ADMIN ONLY)
+router.get("/", protect, isAdmin, async (req, res) => {
+  const users = await User.find({}, { password: 0 });
+  res.json(users);
 });
 
-// CREATE new user
-router.post("/", async (req, res) => {
-  try {
-    const { username, password, role } = req.body;
+// CREATE new user (ADMIN ONLY)
+router.post("/", protect, isAdmin, async (req, res) => {
+  const { username, password, role } = req.body;
 
-    await User.create({
-      username,
-      password,
-      role: role || "cashier",
-    });
-
-    res.json({ message: "User created" });
-  } catch (err) {
-    console.error("User create error:", err);
-    res.status(400).json({ message: "Failed to create user" });
+  if (!username || !password) {
+    return res.status(400).json({ message: "Missing fields" });
   }
+
+  const exists = await User.findOne({ username });
+  if (exists) {
+    return res.status(400).json({ message: "Username already exists" });
+  }
+
+  const user = await User.create({
+    username,
+    password,
+    role: role || "cashier",
+  });
+
+  res.status(201).json({
+    _id: user._id,
+    username: user.username,
+    role: user.role,
+  });
 });
 
-// DELETE user
-router.delete("/:id", async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "User deleted" });
-  } catch (err) {
-    res.status(400).json({ message: "Failed to delete user" });
-  }
+// DELETE user (ADMIN ONLY)
+router.delete("/:id", protect, isAdmin, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ message: "User deleted" });
 });
+
 
 module.exports = router;

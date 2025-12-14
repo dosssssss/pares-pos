@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// 🔗 Deployed backend URL
 const API_URL = "https://pares-pos.onrender.com";
 
 const UserManagement = () => {
   const navigate = useNavigate();
 
-  // 🔐 Always fetch latest token
+  // Always read the latest token
   const getToken = () => localStorage.getItem("token");
 
   const [users, setUsers] = useState([]);
@@ -18,7 +17,15 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // 🔒 Handle auth errors globally
+  // Safely parse backend responses
+  const parseResponse = async (res) => {
+    const type = res.headers.get("content-type");
+    if (type && type.includes("application/json")) {
+      return await res.json();
+    }
+    return null;
+  };
+
   const handleAuthError = (res) => {
     if (res.status === 401 || res.status === 403) {
       localStorage.clear();
@@ -28,9 +35,9 @@ const UserManagement = () => {
     return false;
   };
 
-  // =========================
-  // LOAD USERS (ADMIN ONLY)
-  // =========================
+  // ======================
+  // FETCH USERS
+  // ======================
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -44,15 +51,14 @@ const UserManagement = () => {
 
       if (handleAuthError(res)) return;
 
-      const data = await res.json();
+      const data = await parseResponse(res);
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to load users");
+        throw new Error(data?.message || `Request failed (${res.status})`);
       }
 
       setUsers(data);
     } catch (err) {
-      console.error("Error loading users:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -63,9 +69,9 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // =========================
-  // CREATE USER (ADMIN ONLY)
-  // =========================
+  // ======================
+  // CREATE USER
+  // ======================
   const handleCreate = async () => {
     if (!username || !password) {
       setError("Please fill out all fields");
@@ -85,17 +91,17 @@ const UserManagement = () => {
         },
         body: JSON.stringify({
           username: username.trim(),
-          password: password.trim(),
+          password: password.trim(), // PLAIN TEXT ONLY
           role,
         }),
       });
 
       if (handleAuthError(res)) return;
 
-      const data = await res.json();
+      const data = await parseResponse(res);
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to create user");
+        throw new Error(data?.message || `Request failed (${res.status})`);
       }
 
       setSuccess("User created successfully!");
@@ -104,16 +110,15 @@ const UserManagement = () => {
       setRole("cashier");
       fetchUsers();
     } catch (err) {
-      console.error("Error creating user:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================
-  // DELETE USER (ADMIN ONLY)
-  // =========================
+  // ======================
+  // DELETE USER
+  // ======================
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
 
@@ -131,117 +136,55 @@ const UserManagement = () => {
 
       if (handleAuthError(res)) return;
 
-      const data = await res.json();
+      const data = await parseResponse(res);
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to delete user");
+        throw new Error(data?.message || `Request failed (${res.status})`);
       }
 
       setSuccess("User deleted successfully!");
       fetchUsers();
     } catch (err) {
-      console.error("Error deleting user:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearMessages = () => {
-    setError(null);
-    setSuccess(null);
-  };
-
   return (
-    <div style={styles.container}>
-      <button onClick={() => navigate("/admin")} style={styles.backBtn}>
-        ← Back to Admin
-      </button>
+    <div style={{ padding: 30, maxWidth: 800, margin: "0 auto" }}>
+      <button onClick={() => navigate("/admin")}>← Back to Admin</button>
 
       <h1>User Management</h1>
 
-      {error && (
-        <div style={styles.errorBox} onClick={clearMessages}>
-          {error}
-        </div>
-      )}
+      {error && <div style={{ color: "red" }}>{error}</div>}
+      {success && <div style={{ color: "green" }}>{success}</div>}
 
-      {success && (
-        <div style={styles.successBox} onClick={clearMessages}>
-          {success}
-        </div>
-      )}
+      <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
 
-      <div style={styles.formBox}>
-        <input
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          disabled={loading}
-        />
+      <select value={role} onChange={e => setRole(e.target.value)}>
+        <option value="cashier">Cashier</option>
+        <option value="admin">Admin</option>
+      </select>
 
-        <input
-          style={styles.input}
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
-        />
+      <button onClick={handleCreate} disabled={loading}>
+        {loading ? "Adding..." : "Add User"}
+      </button>
 
-        <select
-          style={styles.input}
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          disabled={loading}
-        >
-          <option value="cashier">Cashier</option>
-          <option value="admin">Admin</option>
-        </select>
-
-        <button style={styles.addBtn} onClick={handleCreate} disabled={loading}>
-          {loading ? "Adding..." : "Add User"}
-        </button>
-      </div>
-
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.th}>Username</th>
-            <th style={styles.th}>Role</th>
-            <th style={styles.th}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.length === 0 ? (
-            <tr>
-              <td colSpan="3" style={styles.emptyMessage}>
-                No users found
-              </td>
-            </tr>
-          ) : (
-            users.map((u) => (
-              <tr key={u._id}>
-                <td style={styles.td}>{u.username}</td>
-                <td style={styles.td}>{u.role}</td>
-                <td style={styles.td}>
-                  <button
-                    style={styles.deleteBtn}
-                    onClick={() => handleDelete(u._id)}
-                    disabled={loading}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <ul>
+        {users.map(u => (
+          <li key={u._id}>
+            {u.username} ({u.role})
+            <button onClick={() => handleDelete(u._id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
+
+
 
 
 const styles = {

@@ -5,41 +5,58 @@ const { protect, isAdmin } = require("../middleware/authMiddleware");
 
 // GET all users (ADMIN ONLY)
 router.get("/", protect, isAdmin, async (req, res) => {
-  const users = await User.find({}, { password: 0 });
-  res.json(users);
+  try {
+    const users = await User.find({}, { password: 0 });
+    res.json(users);
+  } catch (err) {
+    console.error("GET USERS ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
 });
 
 // CREATE new user (ADMIN ONLY)
 router.post("/", protect, isAdmin, async (req, res) => {
-  const { username, password, role } = req.body;
+  try {
+    const { username, password, role } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ message: "Missing fields" });
+    if (!username || !password) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    const exists = await User.findOne({ username });
+    if (exists) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    const user = await User.create({
+      username,
+      password, // plain text → bcrypt in model
+      role: role || "cashier",
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+    });
+  } catch (err) {
+    console.error("CREATE USER ERROR:", err);
+    res.status(500).json({
+      message: "Server error creating user",
+      error: err.message,
+    });
   }
-
-  const exists = await User.findOne({ username });
-  if (exists) {
-    return res.status(400).json({ message: "Username already exists" });
-  }
-
-  const user = await User.create({
-    username,
-    password,
-    role: role || "cashier",
-  });
-
-  res.status(201).json({
-    _id: user._id,
-    username: user.username,
-    role: user.role,
-  });
 });
 
 // DELETE user (ADMIN ONLY)
 router.delete("/:id", protect, isAdmin, async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: "User deleted" });
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "User deleted" });
+  } catch (err) {
+    console.error("DELETE USER ERROR:", err);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
 });
-
 
 module.exports = router;

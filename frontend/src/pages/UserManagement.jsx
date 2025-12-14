@@ -7,8 +7,8 @@ const API_URL = "https://pares-pos.onrender.com";
 const UserManagement = () => {
   const navigate = useNavigate();
 
-  // ✅ GET TOKEN
-  const token = localStorage.getItem("token");
+  // 🔐 Always fetch latest token
+  const getToken = () => localStorage.getItem("token");
 
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState("");
@@ -18,7 +18,7 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // 🔒 Helper: handle auth errors
+  // 🔒 Handle auth errors globally
   const handleAuthError = (res) => {
     if (res.status === 401 || res.status === 403) {
       localStorage.clear();
@@ -28,28 +28,32 @@ const UserManagement = () => {
     return false;
   };
 
+  // =========================
   // LOAD USERS (ADMIN ONLY)
+  // =========================
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const res = await fetch(`${API_URL}/api/users`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
       });
 
       if (handleAuthError(res)) return;
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
+        throw new Error(data.message || "Failed to load users");
       }
 
-      const data = await res.json();
       setUsers(data);
     } catch (err) {
       console.error("Error loading users:", err);
-      setError("Failed to load users");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -59,7 +63,9 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
+  // =========================
   // CREATE USER (ADMIN ONLY)
+  // =========================
   const handleCreate = async () => {
     if (!username || !password) {
       setError("Please fill out all fields");
@@ -68,20 +74,28 @@ const UserManagement = () => {
 
     setLoading(true);
     setError(null);
+    setSuccess(null);
+
     try {
       const res = await fetch(`${API_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ username, password, role }),
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password.trim(),
+          role,
+        }),
       });
 
       if (handleAuthError(res)) return;
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(`Failed to create user`);
+        throw new Error(data.message || "Failed to create user");
       }
 
       setSuccess("User created successfully!");
@@ -91,37 +105,43 @@ const UserManagement = () => {
       fetchUsers();
     } catch (err) {
       console.error("Error creating user:", err);
-      setError("Failed to create user");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================
   // DELETE USER (ADMIN ONLY)
+  // =========================
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
 
     setLoading(true);
     setError(null);
+    setSuccess(null);
+
     try {
       const res = await fetch(`${API_URL}/api/users/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
       });
 
       if (handleAuthError(res)) return;
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(`Failed to delete user`);
+        throw new Error(data.message || "Failed to delete user");
       }
 
       setSuccess("User deleted successfully!");
       fetchUsers();
     } catch (err) {
       console.error("Error deleting user:", err);
-      setError("Failed to delete user");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -145,6 +165,7 @@ const UserManagement = () => {
           {error}
         </div>
       )}
+
       {success && (
         <div style={styles.successBox} onClick={clearMessages}>
           {success}
@@ -221,7 +242,6 @@ const UserManagement = () => {
     </div>
   );
 };
-
 
 
 const styles = {

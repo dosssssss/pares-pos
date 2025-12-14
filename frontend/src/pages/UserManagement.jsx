@@ -7,6 +7,9 @@ const API_URL = "https://pares-pos.onrender.com";
 const UserManagement = () => {
   const navigate = useNavigate();
 
+  // ✅ GET TOKEN
+  const token = localStorage.getItem("token");
+
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,20 +18,38 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Load all users
+  // 🔒 Helper: handle auth errors
+  const handleAuthError = (res) => {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/";
+      return true;
+    }
+    return false;
+  };
+
+  // LOAD USERS (ADMIN ONLY)
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/users`);
+      const res = await fetch(`${API_URL}/api/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (handleAuthError(res)) return;
+
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
+
       const data = await res.json();
       setUsers(data);
     } catch (err) {
       console.error("Error loading users:", err);
-      setError("Failed to load users. Is the server running?");
+      setError("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -38,7 +59,7 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Create new user
+  // CREATE USER (ADMIN ONLY)
   const handleCreate = async () => {
     if (!username || !password) {
       setError("Please fill out all fields");
@@ -50,12 +71,17 @@ const UserManagement = () => {
     try {
       const res = await fetch(`${API_URL}/api/users`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ username, password, role }),
       });
 
+      if (handleAuthError(res)) return;
+
       if (!res.ok) {
-        throw new Error(`Failed to create user: ${res.status}`);
+        throw new Error(`Failed to create user`);
       }
 
       setSuccess("User created successfully!");
@@ -71,17 +97,24 @@ const UserManagement = () => {
     }
   };
 
-  // Delete user
+  // DELETE USER (ADMIN ONLY)
   const handleDelete = async (id) => {
+    if (!window.confirm("Delete this user?")) return;
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${API_URL}/api/users/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
+      if (handleAuthError(res)) return;
+
       if (!res.ok) {
-        throw new Error(`Failed to delete user: ${res.status}`);
+        throw new Error(`Failed to delete user`);
       }
 
       setSuccess("User deleted successfully!");
@@ -94,7 +127,6 @@ const UserManagement = () => {
     }
   };
 
-  // Clear messages
   const clearMessages = () => {
     setError(null);
     setSuccess(null);
@@ -102,17 +134,12 @@ const UserManagement = () => {
 
   return (
     <div style={styles.container}>
-      {/* BACK BUTTON */}
-      <button
-        onClick={() => navigate("/admin")}
-        style={styles.backBtn}
-      >
+      <button onClick={() => navigate("/admin")} style={styles.backBtn}>
         ← Back to Admin
       </button>
 
       <h1>User Management</h1>
 
-      {/* Error/Success Messages */}
       {error && (
         <div style={styles.errorBox} onClick={clearMessages}>
           {error}
@@ -124,11 +151,9 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* ADD USER */}
       <div style={styles.formBox}>
         <input
           style={styles.input}
-          type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -154,19 +179,11 @@ const UserManagement = () => {
           <option value="admin">Admin</option>
         </select>
 
-        <button
-          style={styles.addBtn}
-          onClick={handleCreate}
-          disabled={loading}
-        >
+        <button style={styles.addBtn} onClick={handleCreate} disabled={loading}>
           {loading ? "Adding..." : "Add User"}
         </button>
       </div>
 
-      {/* LOADING */}
-      {loading && <div style={styles.loading}>Loading...</div>}
-
-      {/* USERS TABLE */}
       <table style={styles.table}>
         <thead>
           <tr>
@@ -175,7 +192,6 @@ const UserManagement = () => {
             <th style={styles.th}>Action</th>
           </tr>
         </thead>
-
         <tbody>
           {users.length === 0 ? (
             <tr>
@@ -205,6 +221,8 @@ const UserManagement = () => {
     </div>
   );
 };
+
+
 
 const styles = {
   container: {

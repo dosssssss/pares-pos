@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // 🔗 Use your deployed backend URL
 const API_URL = "https://pares-pos.onrender.com";
 
 const CounterSales = () => {
+  const navigate = useNavigate();
   const [date, setDate] = useState("");
   const [orders, setOrders] = useState([]);
 
@@ -24,6 +26,23 @@ const CounterSales = () => {
 
   return (
     <div style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
+      {/* 🔙 BACK BUTTON */}
+      <button
+        onClick={() => navigate("/counter")}
+        style={{
+          marginBottom: "15px",
+          padding: "8px 16px",
+          background: "#007bff",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+          fontSize: "14px",
+        }}
+      >
+        ← Back to POS
+      </button>
+
       <h1>Sales Report</h1>
 
       {/* Date Picker + Search */}
@@ -91,7 +110,6 @@ const CounterSales = () => {
                 >
                   <h2 style={{ margin: 0 }}>₱{order.total}</h2>
 
-                  {/* Using saved date & time */}
                   <p style={{ margin: 0, opacity: 0.7 }}>
                     {order.date} — {order.time}
                   </p>

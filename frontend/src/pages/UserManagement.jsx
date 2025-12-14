@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // 🔗 Deployed backend URL
 const API_URL = "https://pares-pos.onrender.com";
 
 const UserManagement = () => {
+  const navigate = useNavigate();
+
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -99,6 +102,14 @@ const UserManagement = () => {
 
   return (
     <div style={styles.container}>
+      {/* BACK BUTTON */}
+      <button
+        onClick={() => navigate("/admin")}
+        style={styles.backBtn}
+      >
+        ← Back to Admin
+      </button>
+
       <h1>User Management</h1>
 
       {/* Error/Success Messages */}
@@ -152,10 +163,10 @@ const UserManagement = () => {
         </button>
       </div>
 
-      {/* LOADING INDICATOR */}
+      {/* LOADING */}
       {loading && <div style={styles.loading}>Loading...</div>}
 
-      {/* USERS LIST */}
+      {/* USERS TABLE */}
       <table style={styles.table}>
         <thead>
           <tr>
@@ -169,7 +180,7 @@ const UserManagement = () => {
           {users.length === 0 ? (
             <tr>
               <td colSpan="3" style={styles.emptyMessage}>
-                {error ? "No users available" : "No users found"}
+                No users found
               </td>
             </tr>
           ) : (
@@ -201,6 +212,16 @@ const styles = {
     fontFamily: "Arial, sans-serif",
     maxWidth: "800px",
     margin: "0 auto",
+  },
+  backBtn: {
+    marginBottom: "20px",
+    padding: "8px 14px",
+    backgroundColor: "#343a40",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "14px",
   },
   formBox: {
     display: "flex",

@@ -16,6 +16,27 @@ function CounterPOS() {
   const [change, setChange] = useState(0);
 
   const navigate = useNavigate();
+  // =========================
+// FULLSCREEN SUPPORT
+// =========================
+const toggleFullscreen = () => {
+  const el = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    if (el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen(); // iOS Safari (limited)
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+};
+
 
   // UPDATED CATEGORIES
   const categories = ["PARES", "GOTO", "SOLO", "EXTRA", "DRINKS"];
@@ -30,9 +51,10 @@ function CounterPOS() {
     setFilteredProducts(data.filter((p) => p.category === "PARES"));
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+ useEffect(() => {
+  window.scrollTo(0, 1);
+}, []);
+
 
   const filterProducts = (cat) => {
     setCategory(cat);
@@ -150,6 +172,12 @@ function CounterPOS() {
           </button>
         </div>
       </div>
+
+      <button onClick={toggleFullscreen} className="fullscreen-btn">
+  Full Screen
+</button>
+
+
 
       {/* Category Tabs */}
       <div className="category-tabs">

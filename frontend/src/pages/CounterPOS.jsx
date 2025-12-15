@@ -51,10 +51,9 @@ const toggleFullscreen = () => {
     setFilteredProducts(data.filter((p) => p.category === "PARES"));
   };
 
- useEffect(() => {
-  window.scrollTo(0, 1);
-}, []);
-
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const filterProducts = (cat) => {
     setCategory(cat);

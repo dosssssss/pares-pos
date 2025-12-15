@@ -42,6 +42,8 @@ export default function UserManagement() {
     fetchUsers();
   }, []);
 
+  
+
   // =========================
   // CREATE USER
   // =========================
@@ -108,6 +110,8 @@ export default function UserManagement() {
       setError(err.message);
     }
   };
+
+  
 
   // =========================
   // JSX

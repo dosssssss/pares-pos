@@ -29,6 +29,10 @@ app.use("/api/users", userRoutes);
 
 
 
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Server error" });
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;

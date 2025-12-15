@@ -4,15 +4,19 @@ const User = require("../models/User");
 const { protect, isAdmin } = require("../middleware/authMiddleware");
 
 // GET all users (ADMIN ONLY)
-router.get("/", protect, isAdmin, async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const users = await User.find({}, { password: 0 });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const users = await User.find({}, "-password");
     res.json(users);
   } catch (err) {
-    console.error("GET USERS ERROR:", err);
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+
 
 // CREATE new user (ADMIN ONLY)
 router.post("/", protect, isAdmin, async (req, res) => {
